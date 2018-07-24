@@ -115,11 +115,11 @@ def stream_template(template_name, **context):
     ##rv.enable_buffering(5)
     return rv
 
-
+init()
 # Flask app
 app = Flask(__name__)
 
-init()
+
 @app.route('/')
 def index():
     """Pagina principal"""
