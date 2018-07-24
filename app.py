@@ -34,9 +34,11 @@ def tarar():
     result = hx.zero(times=10)
     if result:			
         logger.debug('Tara de usuario= {}'.format(hx.get_current_offset(channel='A', gain_A=64)))
+        add_data(result, hx.get_current_offset(channel='A', gain_A=64), last_caldata, last_caldate)
+        return result
     else:
         logger.debug('No se pudo realizar la tara inicial')
-    add_data (result, hx.get_current_offset(channel='A', gain_A=64), last_caldata, last_caldate)
+        return None
 
 
 def calibrar():  
@@ -53,12 +55,15 @@ def calibrar():
         hx.set_scale_ratio(scale_ratio=last_caldata)	# ajusta el radio
         add_data (last_caldata, hx.get_current_offset(channel='A', gain_A=64), last_caldata, last_caldate)
         logger.debug("calibrado a: {}".format(last_caldata))
+        return  data
+    return None
         
 def pesar():
     global last_caldata, last_caldate
     peso = hx.get_data_mean(times=10)
     add_data (peso, hx.get_current_offset(channel='A', gain_A=64), last_caldata, last_caldate)
     logger.debug('Valor pesado: {}'.format(peso))
+    return peso
 
 # Flask app
 def stream_template(template_name, **context):
@@ -85,7 +90,7 @@ def index():
 @app.route('/Balanza/Tarar')
 def tarar():
     time_now = time.asctime(time.localtime(time.time()))
-    tara = 10
+    tara = tarar()
     template_data = {
         'time': time_now,
         'tara_out': tara
@@ -95,11 +100,9 @@ def tarar():
 @app.route('/Balanza/PesarWindow')
 def pesar_window():
     def g():
-        num = 0
         while True:
-            time.sleep(1)  # an artificial delay
-            num +=2
-            yield num
+            time.sleep(0.5)  # an artificial delay
+            yield pesar()
     return Response(stream_with_context(stream_template('PesarWindow.html', data=g())))
 
 @app.route('/Balanza/Pesar')
