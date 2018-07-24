@@ -21,6 +21,45 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 global last_caldata, last_caldate, envivo
 
+def init():
+    logger.debug("Comenzando...")
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Configura boton tara
+    GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Configura boton pesa
+    GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Configura boton calibra
+
+    hx = HX711(dout_pin=5, pd_sck_pin=6, gain_channel_A=128, select_channel='B')
+
+    result = hx.reset()
+    if result:
+        logger.debug('Modulo HX711 Inicializado correctamente')
+    else:
+        logger.debug('No se pudo inicializar el modulo HX711')
+
+    hx.set_gain_A(gain=64)  # Selecciona la ganancia del modulo HX711
+    hx.select_channel(channel='A')  # Para el canal A
+
+    # Realiza tara inical y la guarda como offset del canal y ganancia seleccionado
+    result = hx.zero(times=10)
+    if result:
+        logger.debug('Tara inicial = {}'.format(hx.get_current_offset(channel='A', gain_A=64)))
+    else:
+        logger.debug('No se pudo realizar la tara inicial')
+
+    conn = sqlite3.connect('celdaData.db')
+    curs = conn.cursor()
+    dato = (curs.execute("SELECT * FROM Scale_data ORDER BY timestamp DESC LIMIT 1;")).fetchone()
+    global last_caldata
+    global last_caldate
+    last_caldata = dato[3]
+    hx.set_scale_ratio("A", 64, last_caldata)  # Carga la ultima calibracion registrada
+    last_caldate = dato[4]
+    conn.close()  # cierra la base de datos despues de usarla.
+
+    GPIO.add_event_detect(22, GPIO.FALLING, callback=calibrar, bouncetime=300)
+    GPIO.add_event_detect(17, GPIO.FALLING, callback=tarar, bouncetime=300)
+    GPIO.add_event_detect(27, GPIO.FALLING, callback=pesar, bouncetime=300)
 
 # Funcion para agregar datos a la tabla 
 def add_data (medida, tara, calibdata, calibdate):
@@ -80,6 +119,7 @@ def stream_template(template_name, **context):
 # Flask app
 app = Flask(__name__)
 
+init()
 @app.route('/')
 def index():
     """Pagina principal"""
