@@ -1,13 +1,13 @@
 #!/usr/bin/python3
-import RPi.GPIO as GPIO
+#https://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
+#http://flask.pocoo.org/docs/1.0/patterns/streaming/#streaming-from-templates
 import time
 import datetime
 import os
 import logging
-from hx711 import HX711	
 import sqlite3
 import sys
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, stream_with_context, flash
 from flask import request
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def add_data (medida, tara, calibdata, calibdate):
     conn.close()     # cierra la base de datos despues de usarla.
 
 def tarar():
-    result = hx.zero(times=10)
+    result = 0
     if result:			
         logger.debug('Tara de usuario= {}'.format(hx.get_current_offset(channel='A', gain_A=64)))
     else:
@@ -40,8 +40,8 @@ def tarar():
 
 
 def calibrar():  
-    input('Coloque peso de 1KG y pulse enter')
-    data = hx.get_data_mean(times=10)
+    #input('Coloque peso de 1KG y pulse enter')
+    data = 10
     global last_caldata, last_caldate
     if data != False:
         known_weight_grams = 1000
@@ -56,7 +56,7 @@ def calibrar():
         
 def pesar():
     global last_caldata, last_caldate
-    peso = hx.get_data_mean(times=10)
+    peso = 15
     add_data (peso, hx.get_current_offset(channel='A', gain_A=64), last_caldata, last_caldate)
     logger.debug('Valor pesado: {}'.format(peso))
 
@@ -71,8 +71,6 @@ def stream_template(template_name, **context):
     ##rv.enable_buffering(5)
     return rv
 
-
-# Flask app
 app = Flask(__name__)
 
 @app.route('/')
