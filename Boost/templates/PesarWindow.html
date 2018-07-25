@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+<head>
+     <link rel="stylesheet" type ="text/css" href="../static/css/style.css">
+</head>
+    <script src="../static/js/jquery-latest.js"></script>
+    <h3>Peso actual</h3>
+    <h3 id="data">nothing received yet</h3>
+    {% for i in data: %}
+        <script>
+        $("#data").text("{{ i }} gr")
+        </script>
+    {% endfor %}
+</html>

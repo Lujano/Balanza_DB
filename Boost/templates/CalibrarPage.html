@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h3> Calibración </h3>
+    <h3> Coloque peso de 1KG y pulse el botón calibrar</h3>
+    <h4>{{ time }}</h4>
+    <form action="/Balanza/CalibrarEXE" method="post">
+    <button name="forwardBtn" type="submit">CALIBRAR</button>
+    </form>
+    <h3 id="data">nothing received yet</h3>
+    {% for i in data: %}
+        <script>
+        $("#data").text("{{ i }}")
+        </script>
+    {% endfor %}
+    <hr>
+	<h4> Return to main page ==> <a href="/"class="button">RETURN</a></h4>
+	<hr>
+{% endblock %}
